@@ -1,18 +1,6 @@
 clear all
 close all
 
-%% User input
-for N = 1:2
-    prompt = 'EGDMA concentration = ';
-    Conc = input(prompt)
-    prompt = 't2 = ';
-    t2 = input(prompt)
-    prompt = 't1 = ';
-    t1 = input(prompt)
-    filepath = uigetdir
-    
-    %% Fitting
-    
     t2_0 = zeros(4,3);
     t2_10 = zeros(4,3);
     t2_15 = zeros(4,3);
@@ -22,6 +10,19 @@ for N = 1:2
     Et2_10 = zeros(4,3);
     Et2_15 = zeros(4,3);
     errorData = cat(3, t2_0, t2_10, t2_15);
+%% User input
+
+for N = 1:numel(viscosityData_raw)
+   
+    prompt = 'EGDMA concentration = ';
+    Conc = input(prompt)
+    prompt = 't2 = ';
+    t2 = input(prompt)
+    prompt = 't1 = ';
+    t1 = input(prompt)
+    filepath = uigetdir
+    
+%% Fitting
     
     fil = fullfile(filepath,'*.csv')
     d = dir(fil)
@@ -37,7 +38,7 @@ for N = 1:2
         figure
         plot(rate, viscosity,'o')
         set(gca, 'YScale', 'log', 'XScale', 'log')
-        pause
+        %pause
         [critX,critY] = ginput(1);
         [f1,gof] = fit(rate,viscosity,fittype, 'startpoint', [critY, 0.05, 0.5],...
             'exclude', rate < critX);
@@ -51,7 +52,7 @@ for N = 1:2
     avg = mean(fitResult)
     S = std(fitResult)
     
-    %% Assign Value to Matrix
+%% Assign Value to Matrix
     
     if t2 == 0
         m = 1;
@@ -79,8 +80,10 @@ for N = 1:2
         row = 4;
     end
     
-    viscosityData_assign(row, colmn, m) = avg;
+    viscosityData_raw(row, colmn, m) = avg;
     errorData(row, colmn, m) = S;
+    hold on
+    save('viscosity.mat', 'viscosityData_raw')
+    save('error.mat', 'errorData')
     
 end
-
