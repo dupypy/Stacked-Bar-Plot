@@ -1,6 +1,15 @@
 clear all
 close all
 
+%% Load Previous Data?
+
+prompt = 'Load Previous Data? ';
+answer = input(prompt, 's')
+if answer == 'yes'
+    load viscosity.mat
+    load error.mat
+    
+elseif answer == 'no'
     t2_0 = zeros(4,3);
     t2_10 = zeros(4,3);
     t2_15 = zeros(4,3);
@@ -10,10 +19,12 @@ close all
     Et2_10 = zeros(4,3);
     Et2_15 = zeros(4,3);
     errorData = cat(3, t2_0, t2_10, t2_15);
+end
+
 %% User input
 
 for N = 1:numel(viscosityData_raw)
-   
+    
     prompt = 'EGDMA concentration = ';
     Conc = input(prompt)
     prompt = 't2 = ';
@@ -83,6 +94,7 @@ for N = 1:numel(viscosityData_raw)
     viscosityData_raw(row, colmn, m) = avg;
     errorData(row, colmn, m) = S;
     hold on
+    
     save('viscosity.mat', 'viscosityData_raw')
     save('error.mat', 'errorData')
     
