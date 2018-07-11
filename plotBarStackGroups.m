@@ -8,7 +8,7 @@ NumStacksPerGroup = size(stackData, 2);
 %barLabels={'1%', '2%', '3%'};
 % Count off the number of bins
 groupBins = 1:NumGroupsPerAxis;
-MaxGroupWidth = 0.75; % Fraction of 1. If 1, then we have all bars in groups touching
+MaxGroupWidth = 0.90; % Fraction of 1. If 1, then we have all bars in groups touching
 groupOffset = MaxGroupWidth/NumStacksPerGroup;
 figure
     hold on;
@@ -25,7 +25,7 @@ for i=1:NumStacksPerGroup
     groupDrawPos = (internalPosCount)*groupOffset+groupBins
     
     h(i,:) = bar(Y, 'stacked');
-    for k = 1:5
+    for k = 1:3
     errorbar(repmat(groupDrawPos(k), 1, 4), Y_raw(k,:), EY(k,:), 'LineStyle','none');
     end
     set(h(i,1),'facecolor','b','edgecolor','k'); 
@@ -54,9 +54,9 @@ set(gca,'Yscale', 'log')
 
 % Add axis labels:
 xlabel('t1 (s)')
-ylabel('viscosity (mPa*s)')
+ylabel('viscosity (Pa*s)')
 
 % Add a legend:
-leg = legend('t2 = 0s', 't2 = 5s', 't2 = 10s', 't2 = 15s')
-set(leg, 'location', 'bestoutside')
+leg = legend('t2 = 0s', 't2 = 10s', 't2 = 15s', 't2 = 20s')
+set(leg, 'location', 'best')
 end 
