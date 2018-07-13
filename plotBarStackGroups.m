@@ -8,7 +8,7 @@ NumStacksPerGroup = size(stackData, 2);
 %barLabels={'1%', '2%', '3%'};
 % Count off the number of bins
 groupBins = 1:NumGroupsPerAxis;
-MaxGroupWidth = 0.90; % Fraction of 1. If 1, then we have all bars in groups touching
+MaxGroupWidth = 0.80; % Fraction of 1. If 1, then we have all bars in groups touching
 groupOffset = MaxGroupWidth/NumStacksPerGroup;
 figure
     hold on;
