@@ -67,8 +67,16 @@ for N = 1:numel(eta0_fitData)
         shrate = table2array(T(:,8));
         viscm  = table2array(T(:,9));
         
+        % selection of points by user
+        % 1st selection = eta0 guess, 2nd selection = lamda guess
+        figure
+        plot(shrate,viscm,'b.','markers',10)
+        set(gca, 'YScale', 'log', 'XScale', 'log');
+        
+        [x,y] = ginput(2);
+        
         % define unknown parameters and make initial guesses
-        g = [5, 0.02, 0.7, 0.5]; %initial guesses
+        g = [y(1), 1/x(2), 0.5, 0.5]; %initial guesses
         % where: g(1) = eta0; g(2) = lamda; g(3) = a; g(4) = n;
         
         % non-linear constraint function (i.e. Modified Carreau-Yasuda Model)
@@ -82,7 +90,7 @@ for N = 1:numel(eta0_fitData)
        
         % fmincon: Find minimum of constrained nonlinear multivariable function
         % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
-        lb = zeros(size(g)); ub = ones(size(g))*inf;
+        lb = zeros(size(g)); ub = [inf, inf, 1, 1];
         options = optimset('Algorithm', 'interior-point', ...
             'MaxFunEval',inf,'MaxIter',Inf);
         gopt = fmincon(objective,g,[],[],[],[],lb,ub,[],options);
@@ -95,9 +103,6 @@ for N = 1:numel(eta0_fitData)
         disp(['optimized parameters: ' num2str(gopt)])
         
         % plot of measured vs optimized/fitted results
-        figure
-        plot(shrate,viscm,'b.','markers',10)
-        set(gca, 'YScale', 'log', 'XScale', 'log');
         hold on
         plot(shrate,visc(gopt),'r-')
         lgnd = legend('measured viscosity', 'fitted viscosity');
