@@ -5,29 +5,30 @@ prompt = 'Load previous data? yes/no? ';
 answer = input(prompt,'s')
 
 if strcmpi(answer,'yes')
-    load viscosity.mat
-    load error.mat
+    load eta0_fit.mat
+    load eta0error_fit.mat
     load lamda_fit.mat
     load a_fit.mat
     load n_fit.mat
     load sse_fit.mat
     load r2_fit.mat
+    load r2adj_fit.mat
     load rmse_fit.mat
     
 elseif strcmpi(answer,'no')
-    % creation of t2 files for: eta_0 (labeled here as: viscosity)
-    t2_0  = zeros(3,3);
-    t2_10 = zeros(3,3);
-    t2_15 = zeros(3,3);
-    t2_20 = zeros(3,3);
-    viscosityData_raw = cat(3, t2_0, t2_10, t2_15, t2_20);
+    % creation of t2 files for: eta0
+    eta0_t2_0  = zeros(3,3);
+    eta0_t2_10 = zeros(3,3);
+    eta0_t2_15 = zeros(3,3);
+    eta0_t2_20 = zeros(3,3);
+    eta0_fitData = cat(3, eta0_t2_0, eta0_t2_10, eta0_t2_15, eta0_t2_20);
     
-    % creation of t2 files for: error
-    Et2_0 = zeros(3,3);
-    Et2_10 = zeros(3,3);
-    Et2_15 = zeros(3,3);
-    Et2_20 = zeros(3,3);
-    errorData = cat(3, Et2_0, Et2_10, Et2_15, Et2_20);
+    % creation of t2 files for: standard deviation
+    error_t2_0 = zeros(3,3);
+    error_t2_10 = zeros(3,3);
+    error_t2_15 = zeros(3,3);
+    error_t2_20 = zeros(3,3);
+    eta0error_fitData = cat(3, error_t2_0, error_t2_10, error_t2_15, error_t2_20);
     
     % creation of t2 files for: lamda
     lamda_t2_0 = zeros (3,3);
@@ -57,12 +58,19 @@ elseif strcmpi(answer,'no')
     sse_t2_20 = zeros(3,3);
     sse_fitData = cat(3, sse_t2_0, sse_t2_10, sse_t2_15, sse_t2_20);
     
-    % creation of t2 files for: r^2
+    % creation of t2 files for: r2
     r2_t2_0 = zeros (3,3);
     r2_t2_10 = zeros(3,3);
     r2_t2_15 = zeros(3,3);
     r2_t2_20 = zeros(3,3);
     r2_fitData = cat(3, r2_t2_0, r2_t2_10, r2_t2_15, r2_t2_20);
+    
+    % creation of t2 files for: r2adj
+    r2adj_t2_0 = zeros (3,3);
+    r2adj_t2_10 = zeros(3,3);
+    r2adj_t2_15 = zeros(3,3);
+    r2adj_t2_20 = zeros(3,3);
+    r2adj_fitData = cat(3, r2adj_t2_0, r2adj_t2_10, r2adj_t2_15, r2adj_t2_20);
     
     % creation of t2 files for: rmse
     rmse_t2_0 = zeros (3,3);
@@ -74,7 +82,7 @@ end
 
 %% Fitting of model parameters
 % Solution condition entry
-for N = 1:numel(viscosityData_raw)
+for N = 1:numel(eta0_fitData)
     prompt = 'EGDMA concentration = ';
     Conc = input(prompt)
     prompt = 't1 = ';
@@ -83,12 +91,13 @@ for N = 1:numel(viscosityData_raw)
     t2 = input(prompt)
 
     % Creation of empty data sets
-    fitResult = [];
+    eta0_fit = [];
     lamda_fit = [];
     a_fit = [];
     n_fit = [];
     sse_fit = [];
     r2_fit = [];
+    r2adj_fit = [];
     rmse_fit = [];
     
     % access desired file(s)
@@ -101,26 +110,28 @@ for N = 1:numel(viscosityData_raw)
     for k=1:numel(d)
         filename = fullfile(filepath,d(k).name)
         T = readtable(filename);
-        rate = table2array(T(:, 8));
+        shrate = table2array(T(:, 8));
         viscosity = table2array(T(:, 9));
         figure
-        plot(rate, viscosity,'b.','markers', 10)
+        plot(shrate, viscosity,'b.','markers', 10)
         set(gca, 'YScale', 'log', 'XScale', 'log')
         [x,y] = ginput(2);
-        [f1,gof] = fit(rate,viscosity,ft,'StartPoint',[y(1), 1/x(2), 0.5, 0.5],...
+        [f1,gof] = fit(shrate, viscosity, ft, 'StartPoint', [y(1), 1/x(2), 0.5, 0.5],...
             'Lower', [0, 0, 0, 0], ...
-            'Upper', [Inf, Inf, 1, 1]);
+            'Upper', [Inf, Inf, Inf, 1]);
+            %'Exclude', shrate < x(1));
         hold on
         plot(f1)
         c = coeffvalues(f1);
         
-        fitResult = [fitResult; c(1)]
+        eta0_fit = [eta0_fit; c(1)]
         lamda_fit = [lamda_fit; c(2)];
         a_fit = [a_fit; c(3)];
         n_fit = [n_fit; c(4)];
         gofmatrix = cell2mat(struct2cell(gof))';
         sse_fit = [sse_fit; gofmatrix(1)]
-        r2_fit = [r2_fit; gofmatrix(2)]
+        r2_fit = [r2_fit; gofmatrix(2)];
+        r2adj_fit = [r2adj_fit; gofmatrix(4)];
         rmse_fit = [rmse_fit; gofmatrix(5)]
     end
     
@@ -129,11 +140,11 @@ for N = 1:numel(viscosityData_raw)
     answer = input(prompt,'s')
     
     if strcmpi(answer,'yes')
-        fitResult_Modified = fitResult;
-        outlier_removal = 'enter row number of outlier to be removed = ';
+        eta0_Modified = eta0_fit;
+        outlier_removal = 'Enter row number of outlier to be removed = ';
         outlier_val = input(outlier_removal)
         
-        fitResult_Modified(outlier_val) = [];
+        eta0_Modified(outlier_val) = [];
         lamda_Modified = lamda_fit;
         lamda_Modified(outlier_val) = [];
         a_Modified = a_fit;
@@ -144,26 +155,30 @@ for N = 1:numel(viscosityData_raw)
         sse_Modified(outlier_val) = [];
         r2_Modified = r2_fit;
         r2_Modified(outlier_val) = [];
+        r2adj_Modified = r2adj_fit;
+        r2adj_Modified(outlier_val) = [];
         rmse_Modified = rmse_fit;
         rmse_Modified(outlier_val) = [];
         
-        avg = mean(fitResult_Modified);
-        S = std(fitResult_Modified);
+        eta0_avg = mean(eta0_Modified);
+        eta0error_avg = std(eta0_Modified);
         lamda_avg = mean(lamda_Modified);
         a_avg = mean(a_Modified);
         n_avg = mean(n_Modified);
         sse_avg = mean(sse_Modified);
         r2_avg = mean(r2_Modified);
+        r2adj_avg = mean(r2adj_Modified);
         rmse_avg = mean(rmse_Modified);
         
     elseif strcmpi(answer,'no')
-        avg = mean(fitResult);
-        S = std(fitResult);
+        eta0_avg = mean(eta0_fit);
+        eta0error_avg = std(eta0_fit);
         lamda_avg = mean(lamda_fit);
         a_avg = mean(a_fit);
         n_avg = mean(n_fit);
         sse_avg = mean(sse_fit);
         r2_avg = mean(r2_fit);
+        r2adj_avg = mean(r2adj_fit);
         rmse_avg = mean(rmse_fit);
     end
     %% Assign fit values to matrix
@@ -196,19 +211,23 @@ for N = 1:numel(viscosityData_raw)
         row = 3;
     end
     
-    viscosityData_raw(row, colmn, m) = avg;
-    errorData(row, colmn, m) = S;
+    eta0_fitData(row, colmn, m) = eta0_avg;
+    eta0error_fitData(row, colmn, m) = eta0error_avg;
     lamda_fitData(row, colmn, m) = lamda_avg;
     a_fitData(row, colmn, m) =  a_avg;
+    n_fitData(row, colmn, m) = n_avg;
     sse_fitData(row, colmn, m) = sse_avg;
     r2_fitData(row, colmn, m) = r2_avg;
+    r2adj_fitData(row, colmn, m) = r2adj_avg;
     rmse_fitData(row, colmn, m) = rmse_avg;
     
-    save('viscosity.mat', 'viscosityData_raw')
-    save('error.mat', 'errorData')
+    save('eta0_fit.mat', 'eta0_fitData')
+    save('eta0error_fit.mat', 'eta0error_fitData')
     save('lamda_fit.mat', 'lamda_fitData')
     save('a_fit.mat', 'a_fitData')
+    save('n_fit.mat', 'n_fitData')
     save('sse_fit.mat', 'sse_fitData')
     save('r2_fit.mat', 'r2_fitData')
+    save('r2adj_fit.mat', 'r2adj_fitData')
     save('rmse_fit.mat', 'rmse_fitData')
 end
