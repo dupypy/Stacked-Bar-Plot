@@ -2,13 +2,16 @@ close all; clear all; clc;
 
 %% Create new data/load previous data
 prompt = 'Load previous data? yes/no? ';
-answer = input(prompt,'s');
+answer = input(prompt,'s')
 
 if strcmpi(answer,'yes')
     load eta0_fit.mat
     load lamda_fit.mat
     load a_fit.mat
     load n_fit.mat
+    load sse_fit.mat
+    load r2_fit.mat
+    load rmse_fit.mat
     
 elseif strcmpi(answer,'no')
     % creation of t2 files for: eta_0 
@@ -38,6 +41,27 @@ elseif strcmpi(answer,'no')
     n_t2_15 = zeros(3,3); 
     n_t2_20 = zeros(3,3);
     n_fitData = cat(3, n_t2_0, n_t2_10, n_t2_15, n_t2_20);
+    
+    % creation of t2 files for: sse
+    sse_t2_0 = zeros (3,3);
+    sse_t2_10 = zeros(3,3);
+    sse_t2_15 = zeros(3,3);
+    sse_t2_20 = zeros(3,3);
+    sse_fitData = cat(3, sse_t2_0, sse_t2_10, sse_t2_15, sse_t2_20);
+    
+    % creation of t2 files for: r2
+    r2_t2_0 = zeros (3,3);
+    r2_t2_10 = zeros(3,3);
+    r2_t2_15 = zeros(3,3);
+    r2_t2_20 = zeros(3,3);
+    r2_fitData = cat(3, r2_t2_0, r2_t2_10, r2_t2_15, r2_t2_20);
+    
+    % creation of t2 files for: rmse
+    rmse_t2_0 = zeros (3,3);
+    rmse_t2_10 = zeros(3,3);
+    rmse_t2_15 = zeros(3,3);
+    rmse_t2_20 = zeros(3,3);
+    rmse_fitData = cat(3, rmse_t2_0, rmse_t2_10, rmse_t2_15, rmse_t2_20);
 end
 
 %% Optimzation of model parameters
@@ -55,6 +79,9 @@ for N = 1:numel(eta0_fitData)
     lamda_fit = []; 
     a_fit = []; 
     n_fit = [];
+    sse_fit = [];
+    r2_fit = [];
+    rmse_fit = [];
     
     % access desired file(s)
     filepath = uigetdir('D:\3D Printing Project\Rheology Data\Selected Rheology Data for Project (as of 08-29)');
@@ -86,13 +113,13 @@ for N = 1:numel(eta0_fitData)
         visc = @(g) g(1).*((1+(g(2).*shrate).^g(3)).^((g(4)-1)./g(3)));
         
         % objective function (i.e. function to be minimized)
-        objective = @(g) sum(((visc(g)-viscm)./viscm).^2);
-       
+        objective = @(g) sum(((visc(g)-viscm)).^2);
+        
         % fmincon: Find minimum of constrained nonlinear multivariable function
         % x = fmincon(fun,x0,A,b,Aeq,beq,lb,ub,nonlcon,options)
-        lb = zeros(size(g)); ub = [inf, inf, 1, 1];
+        lb = zeros(size(g)); ub = [Inf, Inf, Inf, 1];
         options = optimset('Algorithm', 'interior-point', ...
-            'MaxFunEval',inf,'MaxIter',Inf);
+            'MaxFunEval',Inf,'MaxIter',Inf);
         gopt = fmincon(objective,g,[],[],[],[],lb,ub,[],options);
         
         % display initial and optimized objective function results 
@@ -110,17 +137,34 @@ for N = 1:numel(eta0_fitData)
         ylabel('shear viscosity (Pa s)'); xlabel('shear rate (1/s)')
         
         % save optimized parameter results
-        eta0_fit = [eta0_fit; gopt(1)]; 
+        eta0_fit = [eta0_fit; gopt(1)]
         lamda_fit = [lamda_fit; gopt(2)];
         a_fit = [a_fit; gopt(3)]; 
         n_fit = [n_fit; gopt(4)];
+        
+        % calculate goodness of fit variables
+        sse_calc = sum((viscm - visc(g)).^2);
+        r2_calc = 1-(sum((viscm - visc(g)).^2)/sum((viscm - mean(viscm)).^2));
+        rmse_calc = sqrt(mean((viscm - visc(g)).^2));
+        
+        %save goodness of fit variable results
+        sse_fit(k) = sse_calc;
+        r2_fit(k) = r2_calc;
+        rmse_fit(k) = rmse_calc;
     end
+    % interchanges rows to columns
+    sse_fit = sse_fit'
+    r2_fit = r2_fit'
+    rmse_fit = rmse_fit'
     
     % evaluate average optimized parameters
     eta0_avg = mean(eta0_fit);
     lamda_avg = mean(lamda_fit); 
     a_avg = mean(a_fit); 
     n_avg = mean(n_fit);
+    sse_avg = mean(sse_fit);
+    r2_avg = mean(r2_fit);
+    rmse_avg = mean(rmse_fit);
     
     %% Assign predicted values to matrix
     % assignment variable: t2
@@ -151,11 +195,18 @@ for N = 1:numel(eta0_fitData)
     end
     
     eta0_fitData(row, colmn, m) = eta0_avg;
-    save('eta0_fit.mat', 'eta0_fitData')
     lamda_fitData(row, colmn, m) = lamda_avg;
-    save('lamda_fit.mat', 'lamda_fitData')
     a_fitData(row, colmn, m) = a_avg;
-    save('a_fit.mat', 'a_fitData')
     n_fitData(row, colmn, m) = n_avg;
+    sse_fitData(row, colmn, m) = sse_avg;
+    r2_fitData(row, colmn, m) = r2_avg;
+    rmse_fitData(row, colmn, m) = rmse_avg;
+    
+    save('eta0_fit.mat', 'eta0_fitData')
+    save('lamda_fit.mat', 'lamda_fitData')
+    save('a_fit.mat', 'a_fitData')
     save('n_fit.mat', 'n_fitData')
+    save('sse_fit.mat', 'sse_fitData')
+    save('r2_fit.mat', 'r2_fitData')
+    save('rmse_fit.mat', 'rmse_fitData')
 end
