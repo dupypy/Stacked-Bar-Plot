@@ -6,6 +6,7 @@ answer = input(prompt,'s')
 
 if strcmpi(answer,'yes')
     load eta0_fit.mat
+    load eta0error_fit.mat
     load lamda_fit.mat
     load a_fit.mat
     load n_fit.mat
@@ -20,6 +21,13 @@ elseif strcmpi(answer,'no')
     eta0_t2_15 = zeros(3,3); 
     eta0_t2_20 = zeros(3,3);
     eta0_fitData = cat(3, eta0_t2_0, eta0_t2_10, eta0_t2_15, eta0_t2_20);
+    
+    % creation of t2 files for: error (standard deviation)
+    error_t2_0 = zeros(3,3);
+    error_t2_10 = zeros(3,3);
+    error_t2_15 = zeros(3,3);
+    error_t2_20 = zeros(3,3);
+    eta0error_fitData = cat(3, error_t2_0, error_t2_10, error_t2_15, error_t2_20);
     
     % creation of t2 files for: lamda
     lamda_t2_0  = zeros(3,3); 
@@ -157,15 +165,48 @@ for N = 1:numel(eta0_fitData)
     r2_fit = r2_fit'
     rmse_fit = rmse_fit'
     
-    % evaluate average optimized parameters
-    eta0_avg = mean(eta0_fit);
-    lamda_avg = mean(lamda_fit); 
-    a_avg = mean(a_fit); 
-    n_avg = mean(n_fit);
-    sse_avg = mean(sse_fit);
-    r2_avg = mean(r2_fit);
-    rmse_avg = mean(rmse_fit);
+    %prompt user if data needs to be modified
+    prompt = 'Need to modify data? yes/no? ';
+    answer = input(prompt,'s')
     
+    if strcmpi(answer,'yes')
+        eta0_Modified = eta0_fit;
+        outlier_removal = 'Enter row number of outlier to be removed = ';
+        outlier_val = input(outlier_removal)
+        
+        eta0_Modified(outlier_val) = [];
+        lamda_Modified = lamda_fit;
+        lamda_Modified(outlier_val) = [];
+        a_Modified = a_fit;
+        a_Modified(outlier_val) = [];
+        n_Modified = n_fit;
+        n_Modified(outlier_val) = [];
+        sse_Modified = sse_fit;
+        sse_Modified(outlier_val) = [];
+        r2_Modified = r2_fit;
+        r2_Modified(outlier_val) = [];
+        rmse_Modified = rmse_fit;
+        rmse_Modified(outlier_val) = [];
+        
+        eta0_avg = mean(eta0_Modified);
+        eta0error_avg = std(eta0_Modified);
+        lamda_avg = mean(lamda_Modified);
+        a_avg = mean(a_Modified);
+        n_avg = mean(n_Modified);
+        sse_avg = mean(sse_Modified);
+        r2_avg = mean(r2_Modified);
+        rmse_avg = mean(rmse_Modified);
+        
+    elseif strcmpi(answer,'no')
+        eta0_avg = mean(eta0_fit);
+        eta0error_avg = std(eta0_fit);
+        lamda_avg = mean(lamda_fit);
+        a_avg = mean(a_fit);
+        n_avg = mean(n_fit);
+        sse_avg = mean(sse_fit);
+        r2_avg = mean(r2_fit);
+        rmse_avg = mean(rmse_fit);
+    end
     %% Assign predicted values to matrix
     % assignment variable: t2
     if t2 == 0
@@ -195,6 +236,7 @@ for N = 1:numel(eta0_fitData)
     end
     
     eta0_fitData(row, colmn, m) = eta0_avg;
+    eta0error_fitData(row, colmn, m) = eta0error_avg;
     lamda_fitData(row, colmn, m) = lamda_avg;
     a_fitData(row, colmn, m) = a_avg;
     n_fitData(row, colmn, m) = n_avg;
@@ -203,6 +245,7 @@ for N = 1:numel(eta0_fitData)
     rmse_fitData(row, colmn, m) = rmse_avg;
     
     save('eta0_fit.mat', 'eta0_fitData')
+    save('eta0error_fit.mat', 'eta0error_fitData')
     save('lamda_fit.mat', 'lamda_fitData')
     save('a_fit.mat', 'a_fitData')
     save('n_fit.mat', 'n_fitData')
