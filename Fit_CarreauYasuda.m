@@ -12,7 +12,6 @@ if strcmpi(answer,'yes')
     load n_fit.mat
     load sse_fit.mat
     load r2_fit.mat
-    load r2adj_fit.mat
     load rmse_fit.mat
     
 elseif strcmpi(answer,'no')
@@ -23,7 +22,7 @@ elseif strcmpi(answer,'no')
     eta0_t2_20 = zeros(3,3);
     eta0_fitData = cat(3, eta0_t2_0, eta0_t2_10, eta0_t2_15, eta0_t2_20);
     
-    % creation of t2 files for: standard deviation
+    % creation of t2 files for: error (standard deviation)
     error_t2_0 = zeros(3,3);
     error_t2_10 = zeros(3,3);
     error_t2_15 = zeros(3,3);
@@ -65,13 +64,6 @@ elseif strcmpi(answer,'no')
     r2_t2_20 = zeros(3,3);
     r2_fitData = cat(3, r2_t2_0, r2_t2_10, r2_t2_15, r2_t2_20);
     
-    % creation of t2 files for: r2adj
-    r2adj_t2_0 = zeros (3,3);
-    r2adj_t2_10 = zeros(3,3);
-    r2adj_t2_15 = zeros(3,3);
-    r2adj_t2_20 = zeros(3,3);
-    r2adj_fitData = cat(3, r2adj_t2_0, r2adj_t2_10, r2adj_t2_15, r2adj_t2_20);
-    
     % creation of t2 files for: rmse
     rmse_t2_0 = zeros (3,3);
     rmse_t2_10 = zeros(3,3);
@@ -97,7 +89,6 @@ for N = 1:numel(eta0_fitData)
     n_fit = [];
     sse_fit = [];
     r2_fit = [];
-    r2adj_fit = [];
     rmse_fit = [];
     
     % access desired file(s)
@@ -112,14 +103,21 @@ for N = 1:numel(eta0_fitData)
         T = readtable(filename);
         shrate = table2array(T(:, 8));
         viscosity = table2array(T(:, 9));
+        
         figure
         plot(shrate, viscosity,'b.','markers', 10)
         set(gca, 'YScale', 'log', 'XScale', 'log')
+        
+        % selection of points by user
+        % 1st selection = eta0 guess, 2nd selection = lamda guess
         [x,y] = ginput(2);
+        
+        %starting points: 
         [f1,gof] = fit(shrate, viscosity, ft, 'StartPoint', [y(1), 1/x(2), 0.5, 0.5],...
-            'Lower', [0, 0, 0, 0], ...
-            'Upper', [Inf, Inf, Inf, 1]);
+            'Lower', [0, 0.001, 0, 0], ...
+            'Upper', [Inf, 100, Inf, 1]);
             %'Exclude', shrate < x(1));
+            %where startincg points are listed in the order: eta0, lamda, a, n
         hold on
         plot(f1)
         c = coeffvalues(f1);
@@ -131,10 +129,8 @@ for N = 1:numel(eta0_fitData)
         gofmatrix = cell2mat(struct2cell(gof))';
         sse_fit = [sse_fit; gofmatrix(1)]
         r2_fit = [r2_fit; gofmatrix(2)];
-        r2adj_fit = [r2adj_fit; gofmatrix(4)];
         rmse_fit = [rmse_fit; gofmatrix(5)]
     end
-    
     %prompt user if data needs to be modified
     prompt = 'Need to modify data? yes/no? ';
     answer = input(prompt,'s')
@@ -155,8 +151,6 @@ for N = 1:numel(eta0_fitData)
         sse_Modified(outlier_val) = [];
         r2_Modified = r2_fit;
         r2_Modified(outlier_val) = [];
-        r2adj_Modified = r2adj_fit;
-        r2adj_Modified(outlier_val) = [];
         rmse_Modified = rmse_fit;
         rmse_Modified(outlier_val) = [];
         
@@ -167,7 +161,6 @@ for N = 1:numel(eta0_fitData)
         n_avg = mean(n_Modified);
         sse_avg = mean(sse_Modified);
         r2_avg = mean(r2_Modified);
-        r2adj_avg = mean(r2adj_Modified);
         rmse_avg = mean(rmse_Modified);
         
     elseif strcmpi(answer,'no')
@@ -178,7 +171,6 @@ for N = 1:numel(eta0_fitData)
         n_avg = mean(n_fit);
         sse_avg = mean(sse_fit);
         r2_avg = mean(r2_fit);
-        r2adj_avg = mean(r2adj_fit);
         rmse_avg = mean(rmse_fit);
     end
     %% Assign fit values to matrix
@@ -218,7 +210,6 @@ for N = 1:numel(eta0_fitData)
     n_fitData(row, colmn, m) = n_avg;
     sse_fitData(row, colmn, m) = sse_avg;
     r2_fitData(row, colmn, m) = r2_avg;
-    r2adj_fitData(row, colmn, m) = r2adj_avg;
     rmse_fitData(row, colmn, m) = rmse_avg;
     
     save('eta0_fit.mat', 'eta0_fitData')
@@ -228,6 +219,5 @@ for N = 1:numel(eta0_fitData)
     save('n_fit.mat', 'n_fitData')
     save('sse_fit.mat', 'sse_fitData')
     save('r2_fit.mat', 'r2_fitData')
-    save('r2adj_fit.mat', 'r2adj_fitData')
     save('rmse_fit.mat', 'rmse_fitData')
 end
